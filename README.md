@@ -27,6 +27,33 @@ A production-ready, secure, and decentralized blockchain-based system for issuin
 - [Contributing](#contributing)
 - [License](#license)
 
+---
+
+## 🚀 Quick Start
+
+**👉 New to this project? Start here:**
+
+1. **Installation:** See **[INSTALL.md](INSTALL.md)** for one-command installation (like `pip install -r requirements.txt`)
+2. **Setup Checklist:** See **[SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)** for step-by-step setup tracking
+3. **Dependencies:** See **[requirements.txt](requirements.txt)** for complete list of all dependencies
+
+### ⚡ Quick Install
+
+**Windows:**
+```powershell
+git clone https://github.com/yourusername/tokenized-academic-credentials.git
+cd tokenized-academic-credentials
+.\install.ps1
+```
+
+**Linux/Mac:**
+```bash
+git clone https://github.com/yourusername/tokenized-academic-credentials.git
+cd tokenized-academic-credentials
+chmod +x install.sh
+./install.sh
+```
+
 ## 🌟 Overview
 
 This system enables educational institutions to issue tamper-proof, verifiable academic credentials as NFTs on the Ethereum blockchain. These credentials are **Soulbound** (non-transferable), ensuring they remain permanently tied to the recipient's wallet address.
@@ -147,12 +174,19 @@ tokenized-academic-credentials/
 
 ## 📦 Prerequisites
 
+> 💡 **For detailed setup instructions, see [INSTALL.md](INSTALL.md)**
+
 Before you begin, ensure you have the following installed:
 
 - **Node.js**: v18.0.0 or higher
 - **npm** or **yarn**: Latest version
 - **MetaMask**: Browser extension
 - **Git**: Latest version
+
+### Additional Requirements
+- **Alchemy Account**: For Sepolia testnet deployment
+- **Pinata Account**: For IPFS metadata storage
+- **Sepolia Test ETH**: From faucet for testnet transactions
 
 ### Check Prerequisites
 
@@ -163,6 +197,44 @@ git --version
 ```
 
 ## 💻 Installation
+
+### Quick Installation (One Command)
+
+#### Option 1: Using Installation Script (Recommended)
+
+**Windows (PowerShell):**
+```powershell
+# Clone repository
+git clone https://github.com/yourusername/tokenized-academic-credentials.git
+cd tokenized-academic-credentials
+
+# Run installation script
+.\install.ps1
+```
+
+**Linux/Mac:**
+```bash
+# Clone repository
+git clone https://github.com/yourusername/tokenized-academic-credentials.git
+cd tokenized-academic-credentials
+
+# Make script executable and run
+chmod +x install.sh
+./install.sh
+```
+
+#### Option 2: Using npm Command
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/tokenized-academic-credentials.git
+cd tokenized-academic-credentials
+
+# Install all dependencies (backend + frontend)
+npm run install-all
+```
+
+### Manual Installation (Step by Step)
 
 ### 1. Clone the Repository
 

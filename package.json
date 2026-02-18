@@ -4,6 +4,7 @@
   "description": "Blockchain-based Academic Credential Verification System",
   "main": "index.js",
   "scripts": {
+    "install-all": "npm install && cd frontend && npm install && cd ..",
     "compile": "hardhat compile",
     "test": "hardhat test",
     "test:coverage": "hardhat coverage",
