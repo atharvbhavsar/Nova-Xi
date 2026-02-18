@@ -37,21 +37,62 @@ A production-ready, secure, and decentralized blockchain-based system for issuin
 2. **Setup Checklist:** See **[SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)** for step-by-step setup tracking
 3. **Dependencies:** See **[requirements.txt](requirements.txt)** for complete list of all dependencies
 
-### ⚡ Quick Install
+---
 
-**Windows:**
+## 📦 How to Download All Dependencies at Once
+
+Users can install **all dependencies** (backend + frontend) with a single command, just like `pip install -r requirements.txt` in Python projects.
+
+### Method 1: Installation Scripts (Easiest) ⭐
+
+**Windows (PowerShell):**
 ```powershell
-git clone https://github.com/yourusername/tokenized-academic-credentials.git
-cd tokenized-academic-credentials
+# Clone repository
+git clone https://github.com/abrar-0020/Tokenized-Academic-Credential-Verification-System.git
+cd Tokenized-Academic-Credential-Verification-System
+
+# Run installation script
 .\install.ps1
 ```
 
-**Linux/Mac:**
+**Linux/Mac (Terminal):**
 ```bash
-git clone https://github.com/yourusername/tokenized-academic-credentials.git
-cd tokenized-academic-credentials
+# Clone repository
+git clone https://github.com/abrar-0020/Tokenized-Academic-Credential-Verification-System.git
+cd Tokenized-Academic-Credential-Verification-System
+
+# Make script executable and run
 chmod +x install.sh
 ./install.sh
+```
+
+This automatically installs both backend and frontend dependencies and verifies the installation!
+
+### Method 2: Using npm Command
+
+```bash
+# Clone repository
+git clone https://github.com/abrar-0020/Tokenized-Academic-Credential-Verification-System.git
+cd Tokenized-Academic-Credential-Verification-System
+
+# Install all dependencies (one command)
+npm run install-all
+```
+
+### Method 3: Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/abrar-0020/Tokenized-Academic-Credential-Verification-System.git
+cd Tokenized-Academic-Credential-Verification-System
+
+# Install backend dependencies
+npm install
+
+# Install frontend dependencies
+cd frontend
+npm install
+cd ..
 ```
 
 ## 🌟 Overview
