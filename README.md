@@ -36,6 +36,7 @@ A production-ready, secure, and decentralized blockchain-based system for issuin
 1. **Installation:** See **[INSTALL.md](INSTALL.md)** for one-command installation (like `pip install -r requirements.txt`)
 2. **Setup Checklist:** See **[SETUP_CHECKLIST.md](SETUP_CHECKLIST.md)** for step-by-step setup tracking
 3. **Dependencies:** See **[requirements.txt](requirements.txt)** for complete list of all dependencies
+4. **Sepolia Deployment:** See **[SEPOLIA_DEPLOYMENT.md](SEPOLIA_DEPLOYMENT.md)** for complete deployment guide to testnet
 
 ---
 
@@ -395,25 +396,44 @@ VITE_CONTRACT_ADDRESS=<deployed_contract_address>
 
 ### Deploy to Sepolia Testnet
 
+> 📘 **For complete step-by-step deployment guide, see [SEPOLIA_DEPLOYMENT.md](SEPOLIA_DEPLOYMENT.md)**
+> 
+> The guide includes:
+> - Detailed setup for Alchemy & Pinata accounts
+> - Environment configuration
+> - Contract deployment & verification
+> - Frontend configuration
+> - Testing procedures
+> - Troubleshooting tips
+
+#### Quick Deployment Steps:
+
 #### 1. Get Sepolia ETH
 
-- Visit [Sepolia Faucet](https://sepoliafaucet.com/)
+- Visit [Sepolia Faucet](https://sepoliafaucet.com/) or [Alchemy Faucet](https://www.alchemy.com/faucets/ethereum-sepolia)
 - Enter your wallet address
-- Request test ETH
+- Request test ETH (~0.1 ETH needed)
 
-#### 2. Deploy to Sepolia
+#### 2. Configure Environment
+
+```bash
+# Copy and edit .env with your Alchemy RPC URL and private key
+cp .env.example .env
+```
+
+#### 3. Deploy to Sepolia
 
 ```bash
 npm run deploy:sepolia
 ```
 
-#### 3. Verify Contract (Optional)
+#### 4. Verify Contract (Optional)
 
 ```bash
 npx hardhat verify --network sepolia <CONTRACT_ADDRESS> <ADMIN_ADDRESS>
 ```
 
-#### 4. Update Frontend Config
+#### 5. Update Frontend Config
 
 Update `frontend/.env`:
 
