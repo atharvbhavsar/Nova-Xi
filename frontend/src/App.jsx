@@ -3,7 +3,6 @@ import { Web3Provider } from './context/Web3Context';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import InstallPWA from './components/InstallPWA';
-import MobileWalletHelper from './components/MobileWalletHelper';
 import ConnectionDebug from './components/ConnectionDebug';
 import Home from './pages/Home';
 import IssueCredential from './pages/IssueCredential';
@@ -26,7 +25,6 @@ function App() {
           </main>
           <Footer />
           <InstallPWA />
-          <MobileWalletHelper />
           <ConnectionDebug />
         </div>
       </Router>
