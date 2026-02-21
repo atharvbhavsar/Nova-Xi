@@ -7,6 +7,17 @@ const Analytics = () => {
     const [simStep, setSimStep] = useState(0);
     const [isIssuanceSim, setIsIssuanceSim] = useState(true);
     const [stats, setStats] = useState({ total: 0, valid: 0, revoked: 0 });
+    const [logs, setLogs] = useState([]);
+
+    const addLog = (message, type = 'info') => {
+        const timestamp = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const prefix = type === 'error' ? '✖' : type === 'success' ? '✔' : '❯';
+        const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : type === 'primary' ? 'text-primary-400' : 'text-gray-300';
+
+        setLogs(prev => [...prev, { timestamp, message, prefix, color }]);
+
+        // Auto-scroll logic happens in the return
+    };
 
     useEffect(() => {
         if (contract) {
@@ -15,20 +26,31 @@ const Analytics = () => {
 
         const bc = new BroadcastChannel('blockchain_simulation');
         bc.onmessage = (event) => {
-            console.log("SIM SIGNAL RECEIVED:", event.data);
             const { type, mode } = event.data;
 
             if (type === 'SIM_START') {
                 setIsIssuanceSim(mode === 'issuance');
                 setSimStep(1);
+                setLogs([]); // Clear logs for new run
+                addLog(`Initializing ${mode} sequence...`, 'primary');
+                addLog(`Remote Peer ID: QmPk...Z7y`, 'info');
             } else if (type === 'SIM_HASHING') {
                 setSimStep(2);
+                addLog(`Calculating Keccak256 root hash...`, 'info');
+                addLog(`Integrity checksum: 0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`, 'success');
             } else if (type === 'SIM_IPFS') {
                 setSimStep(3);
+                addLog(`Pinning JSON bundle to IPFS cluster...`, 'info');
+                addLog(`CID generated: bafybeig...v4ea`, 'success');
             } else if (type === 'SIM_BLOCKCHAIN') {
                 setSimStep(4);
+                addLog(`Broadcasting transaction to network...`, 'primary');
+                addLog(`Gas estimate: ${20 + Math.floor(Math.random() * 10)} Gwei`, 'info');
+                addLog(`Waiting for block confirmation...`, 'info');
             } else if (type === 'SIM_CONFIRMED') {
                 setSimStep(5);
+                addLog(`Transaction confirmed in block #${Math.floor(Math.random() * 1000000)}`, 'success');
+                addLog(`[SYSTEM] Sequence completed successfully.`, 'success');
                 fetchStats();
                 // Reset after 10 seconds of showing success
                 setTimeout(() => setSimStep(0), 10000);
@@ -53,28 +75,57 @@ const Analytics = () => {
     const runIssuanceSim = async () => {
         setIsIssuanceSim(true);
         setSimStep(1); // Starting Form
+        setLogs([]);
+        addLog(`MANUAL DEMO TRIGGERED: Issuance Lifecycle`, 'primary');
+        addLog(`Collecting form data vectors...`, 'info');
         await new Promise(r => setTimeout(r, 1500));
+
         setSimStep(2); // Hashing
+        addLog(`Hashing payload with Keccak256...`, 'info');
+        addLog(`Root: 0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`, 'success');
         await new Promise(r => setTimeout(r, 1200));
+
         setSimStep(3); // IPFS
+        addLog(`Transmitting to IPFS cluster nodes...`, 'info');
+        addLog(`Pinned successfully: CID bafybe...${Math.random().toString(36).substring(2, 5)}`, 'success');
         await new Promise(r => setTimeout(r, 1800));
+
         setSimStep(4); // Blockchain
+        addLog(`Broadcasting mint() to Ethereum network...`, 'primary');
+        addLog(`Gas used: 154,291 units`, 'info');
         await new Promise(r => setTimeout(r, 2500));
+
         setSimStep(5); // Confirmed
+        addLog(`Transaction CONFIRMED @ Block #${Math.floor(Math.random() * 999999)}`, 'success');
+        addLog(`SBT Token ID: ${Math.floor(Math.random() * 10000)} issued.`, 'success');
         fetchStats();
     };
 
     const runVerifySim = async () => {
         setIsIssuanceSim(false);
         setSimStep(1); // Input CID
+        setLogs([]);
+        addLog(`MANUAL DEMO TRIGGERED: Verification Lifecycle`, 'primary');
+        addLog(`Resolving CID pointer...`, 'info');
         await new Promise(r => setTimeout(r, 1000));
+
         setSimStep(2); // Pulling from nodes
+        addLog(`Searching IPFS swarm for content...`, 'info');
+        addLog(`Peer found: 12D3K...x5Q`, 'success');
         await new Promise(r => setTimeout(r, 1500));
+
         setSimStep(3); // Hash Integrity Check
+        addLog(`Verifying hash integrity...`, 'info');
+        addLog(`Match found: Integrity 100%`, 'success');
         await new Promise(r => setTimeout(r, 1200));
+
         setSimStep(4); // Signature Handshake
+        addLog(`Performing cryptographic handshake...`, 'primary');
+        addLog(`Sig: 0x${Math.random().toString(16).substring(2, 10)}... verified`, 'success');
         await new Promise(r => setTimeout(r, 1800));
+
         setSimStep(5); // Result: Valid
+        addLog(`VERIFICATION COMPLETE: Valid Soulbound Token`, 'success');
     };
 
     const resetSim = () => setSimStep(0);
@@ -225,18 +276,24 @@ const Analytics = () => {
                                     </div>
 
                                     {/* Terminal Info Output */}
-                                    <div className="bg-black/50 p-6 rounded-xl border border-gray-800 font-mono text-[10px] overflow-hidden">
-                                        <div className="flex items-center gap-2 mb-2 text-primary-500 opacity-50">
-                                            <span className="w-2 h-2 rounded-full bg-primary-500"></span>
-                                            <span>LIVE DEBUG PORT: 8545</span>
+                                    <div className="bg-black/80 p-6 rounded-xl border border-gray-800 font-mono text-[10px] h-48 overflow-y-auto custom-scrollbar">
+                                        <div className="flex items-center gap-2 mb-3 text-primary-500 opacity-70">
+                                            <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
+                                            <span>LIVE SYSTEM DEBUGGER v1.0.4</span>
                                         </div>
-                                        <div className="space-y-1">
-                                            {simStep >= 1 && <p className="text-blue-400">&gt; Loading component payload...</p>}
-                                            {simStep >= 2 && <p className="text-yellow-400">&gt; Generating SHA256 integrity hash: 0xa4f2...9c1</p>}
-                                            {simStep >= 3 && <p className="text-cyan-400">&gt; Distributing to IPFS network via gateway: Pinata_v2</p>}
-                                            {simStep >= 4 && <p className="text-primary-400">&gt; {isIssuanceSim ? 'Submitting mint() transaction to AcademicCredential.sol...' : 'Executing verifyCredential() constant call...'}</p>}
-                                            {simStep >= 5 && <p className="text-green-400 font-bold">&gt; [DONE] {isIssuanceSim ? 'Transaction Confirmed. Token ID generated successfully.' : 'Verification successful. Cryptographic signature matches issuer public key.'}</p>}
-                                            <p className="animate-pulse">_</p>
+                                        <div className="space-y-1.5">
+                                            {logs.length === 0 ? (
+                                                <p className="text-gray-600 italic">Waiting for process signals...</p>
+                                            ) : (
+                                                logs.map((log, i) => (
+                                                    <div key={i} className={`flex gap-3 leading-relaxed animate-fade-in`}>
+                                                        <span className="text-gray-600 flex-shrink-0">[{log.timestamp}]</span>
+                                                        <span className={`${log.color} flex-shrink-0`}>{log.prefix}</span>
+                                                        <span className={`${log.color}`}>{log.message}</span>
+                                                    </div>
+                                                ))
+                                            )}
+                                            <p className="animate-pulse text-primary-400">_</p>
                                         </div>
                                     </div>
 
