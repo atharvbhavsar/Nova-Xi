@@ -32,6 +32,8 @@ I used a modern "Web3" stack to build this:
 - **Communication:** **EmailJS** for real-time security alerts.
 
 ---
+Worflow:
+
 
 ## 💻 How to run it locally
 
