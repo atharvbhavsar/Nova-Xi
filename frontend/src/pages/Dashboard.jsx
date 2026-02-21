@@ -7,7 +7,7 @@ import { fetchMetadata } from '../utils/helpers';
 
 const Dashboard = () => {
   const { account, contract, isIssuer } = useWeb3();
-  
+
   const [credentials, setCredentials] = useState([]);
   const [allCredentials, setAllCredentials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,42 +74,51 @@ const Dashboard = () => {
 
   const loadAllCredentials = async () => {
     try {
-      // Get total number of credentials issued
-      const totalCredentials = await contract.getTotalCredentials();
-      console.log('Total credentials issued:', totalCredentials.toString());
+      // Query all CredentialIssued events to get the giant non-sequential Token IDs
+      const filter = contract.filters.CredentialIssued();
+      const events = await contract.queryFilter(filter);
 
-      if (totalCredentials === 0n) {
+      console.log('Total credentials issued (from events):', events.length);
+
+      if (events.length === 0) {
         setAllCredentials([]);
         return;
       }
 
-      // Fetch all credentials
-      const allCreds = [];
-      for (let i = 0; i < Number(totalCredentials); i++) {
-        try {
-          const details = await contract.getCredentialDetails(i);
-          let metadata = null;
-
+      // Fetch all credentials in parallel
+      const allCreds = await Promise.all(
+        events.map(async (event) => {
+          const tokenId = event.args.tokenId;
           try {
-            metadata = await fetchMetadata(details.metadataURI);
-          } catch (metaError) {
-            console.error('Error fetching metadata:', metaError);
+            const details = await contract.getCredentialDetails(tokenId);
+            let metadata = null;
+
+            try {
+              metadata = await fetchMetadata(details.metadataURI);
+            } catch (metaError) {
+              console.error('Error fetching metadata:', metaError);
+            }
+
+            return {
+              tokenId: details.tokenId,
+              student: details.student,
+              metadataURI: details.metadataURI,
+              issueTimestamp: details.issueTimestamp,
+              revoked: details.revoked,
+              metadata,
+            };
+          } catch (err) {
+            console.error(`Error loading credential ${tokenId}:`, err);
+            return null;
           }
+        })
+      );
 
-          allCreds.push({
-            tokenId: details.tokenId,
-            student: details.student,
-            metadataURI: details.metadataURI,
-            issueTimestamp: details.issueTimestamp,
-            revoked: details.revoked,
-            metadata,
-          });
-        } catch (err) {
-          console.error(`Error loading credential ${i}:`, err);
-        }
-      }
-
-      setAllCredentials(allCreds);
+      // Filter out any errors and sort by newest first
+      const validCreds = allCreds.filter(Boolean).sort((a, b) =>
+        Number(b.issueTimestamp) - Number(a.issueTimestamp)
+      );
+      setAllCredentials(validCreds);
     } catch (err) {
       console.error('Error loading all credentials:', err);
     }
@@ -135,6 +144,26 @@ const Dashboard = () => {
     }
   };
 
+  const handleBurn = async (tokenId) => {
+    if (!window.confirm('EMERGENCY: Are you SURE you want to BURN and permanently revoke your own credential? This cannot be undone!')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setSuccess(null);
+
+      const tx = await contract.burnCredential(tokenId);
+      await tx.wait();
+
+      setSuccess('Your credential has been permanently burned and revoked.');
+      await loadCredentials(); // Reload credentials
+    } catch (err) {
+      console.error('Error burning credential:', err);
+      setError(err.message || 'Failed to burn your credential');
+    }
+  };
+
   if (!account) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -144,8 +173,8 @@ const Dashboard = () => {
   }
 
   const displayCredentials = viewMode === 'owned' ? credentials : allCredentials;
-  const showEmptyState = viewMode === 'owned' 
-    ? credentials.length === 0 
+  const showEmptyState = viewMode === 'owned'
+    ? credentials.length === 0
     : allCredentials.length === 0;
 
   return (
@@ -155,7 +184,7 @@ const Dashboard = () => {
           {isIssuer && viewMode === 'all' ? 'All Issued Credentials' : 'My Credentials'}
         </h1>
         <p className="text-gray-600">
-          {isIssuer && viewMode === 'all' 
+          {isIssuer && viewMode === 'all'
             ? 'View and manage all credentials issued by your institution'
             : 'View and manage your academic credentials'
           }
@@ -167,21 +196,19 @@ const Dashboard = () => {
         <div className="mb-6 flex space-x-2">
           <button
             onClick={() => setViewMode('owned')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              viewMode === 'owned'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition ${viewMode === 'owned'
+              ? 'bg-primary-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
           >
             My Credentials ({credentials.length})
           </button>
           <button
             onClick={() => setViewMode('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              viewMode === 'all'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition ${viewMode === 'all'
+              ? 'bg-primary-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
           >
             All Issued ({allCredentials.length})
           </button>
@@ -217,7 +244,8 @@ const Dashboard = () => {
               credential={credential}
               metadata={credential.metadata}
               onRevoke={isIssuer ? handleRevoke : null}
-              showActions={isIssuer}
+              onBurn={!isIssuer ? handleBurn : null}
+              showActions={isIssuer || !isIssuer}
             />
           ))}
         </div>

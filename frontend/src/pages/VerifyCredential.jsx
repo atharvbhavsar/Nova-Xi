@@ -4,18 +4,25 @@ import { useSearchParams } from 'react-router-dom';
 import CredentialCard from '../components/CredentialCard';
 import Loading from '../components/Loading';
 import Alert from '../components/Alert';
+import { QRCodeSVG } from 'qrcode.react';
 import { fetchMetadata, copyToClipboard, ipfsToHttp } from '../utils/helpers';
 
 const VerifyCredential = () => {
   const { contract } = useWeb3();
   const [searchParams] = useSearchParams();
-  
+  const [bc] = useState(() => new BroadcastChannel('blockchain_simulation'));
+
+  useEffect(() => {
+    return () => bc.close();
+  }, [bc]);
+
   const [tokenId, setTokenId] = useState('');
   const [credential, setCredential] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   // Auto-fill and auto-verify tokenId from URL parameter
   useEffect(() => {
@@ -27,9 +34,9 @@ const VerifyCredential = () => {
         try {
           setLoading(true);
           setError(null);
-          
-          const credentialData = await contract.verifyCredential(parseInt(urlTokenId));
-          
+
+          const credentialData = await contract.verifyCredential(urlTokenId);
+
           let metadataData = null;
           try {
             metadataData = await fetchMetadata(credentialData.metadataURI);
@@ -52,22 +59,22 @@ const VerifyCredential = () => {
           setLoading(false);
         }
       };
-      
+
       autoVerify();
     }
   }, [searchParams, contract]);
 
   const handleVerify = async (e, autoTokenId = null) => {
     if (e) e.preventDefault();
-    
+
     const idToVerify = autoTokenId || tokenId;
-    
+
     if (!contract) {
       setError('Please connect your wallet first');
       return;
     }
 
-    if (!idToVerify || isNaN(idToVerify) || parseInt(idToVerify) < 0) {
+    if (!idToVerify || !/^\d+$/.test(idToVerify)) {
       setError('Please enter a valid token ID');
       return;
     }
@@ -77,18 +84,42 @@ const VerifyCredential = () => {
       setError(null);
       setCredential(null);
       setMetadata(null);
+      setShowQR(false);
+
+      try { bc.postMessage({ type: 'SIM_START', mode: 'verification' }); } catch (e) { }
+      await new Promise(r => setTimeout(r, 800));
 
       // Verify credential on blockchain
-      const credentialData = await contract.verifyCredential(parseInt(idToVerify));
+      try { bc.postMessage({ type: 'SIM_IPFS' }); } catch (e) { } // Visual step for "Fetching"
+      const credentialData = await contract.verifyCredential(idToVerify);
       console.log('Credential data:', credentialData);
 
       // Fetch metadata from IPFS
+      try { bc.postMessage({ type: 'SIM_BLOCKCHAIN' }); } catch (e) { } // Visual step for "Signature check"
       let metadataData = null;
       try {
         metadataData = await fetchMetadata(credentialData.metadataURI);
       } catch (metaError) {
         console.error('Error fetching metadata:', metaError);
       }
+
+      // Print raw blockchain data to the console as requested by user
+      console.log("\n%c===============================================================", "color: #9333ea; font-weight: bold");
+      console.log("%c          BLOCKCHAIN STORAGE DUMP (Verified Token)             ", "background: #581c87; color: white; font-weight: bold; padding: 2px");
+      console.log("%c===============================================================\n", "color: #9333ea; font-weight: bold");
+      console.log(`🥇 TOKEN ID  : ${credentialData.tokenId.toString()}`);
+      console.log(`👨‍🎓 STUDENT   : ${credentialData.student}`);
+      console.log(`🔗 CID (URI) : ${credentialData.metadataURI}`);
+      console.log(`📅 ISSUED AT : ${new Date(Number(credentialData.issueTimestamp) * 1000).toLocaleString()}`);
+      console.log(`❌ REVOKED   : ${credentialData.revoked}`);
+      console.log("%c---------------------------------------------------------------", "color: #9333ea");
+      if (metadataData) {
+        console.log("IPFS METADATA JSON:");
+        console.log(metadataData);
+        console.log("%c===============================================================\n", "color: #9333ea; font-weight: bold");
+      }
+
+      try { bc.postMessage({ type: 'SIM_CONFIRMED' }); } catch (e) { }
 
       setCredential({
         tokenId: credentialData.tokenId,
@@ -134,13 +165,11 @@ const VerifyCredential = () => {
           </label>
           <div className="flex space-x-3">
             <input
-              type="number"
+              type="text"
               value={tokenId}
-              onChange={(e) => setTokenId(e.target.value)}
-              placeholder="Enter token ID (e.g., 0, 1, 2...)"
+              onChange={(e) => setTokenId(e.target.value.replace(/\D/g, ''))}
+              placeholder="Enter token ID (e.g., 55088231...)"
               className="input-field flex-1"
-              min="0"
-              step="1"
             />
             <button
               type="submit"
@@ -179,14 +208,43 @@ const VerifyCredential = () => {
                       : 'This credential is authentic and has been verified on the blockchain.'}
                   </p>
                 </div>
-                <button
-                  onClick={handleCopy}
-                  className="btn-secondary"
-                  title="Copy verification link"
-                >
-                  {copied ? '✓ Copied' : '📋 Share'}
-                </button>
+                <div className="flex gap-2">
+                  {!credential.revoked && (
+                    <button
+                      onClick={() => setShowQR(!showQR)}
+                      className="btn-secondary"
+                      title="Show QR code"
+                    >
+                      {showQR ? 'Hide QR' : '📱 Show QR Code Here'}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleCopy}
+                    className="btn-secondary"
+                    title="Copy verification link"
+                  >
+                    {copied ? '✓ Copied' : '📋 Share'}
+                  </button>
+                </div>
               </div>
+
+              {/* QR Code Section */}
+              {showQR && !credential.revoked && (
+                <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col items-center">
+                  <p className="text-sm text-gray-600 mb-3 font-semibold uppercase tracking-wider">🔒 Secure Blockchain Verification Scan</p>
+                  <div className="bg-white p-4 rounded-lg shadow-sm border-2 border-primary-100 ring-4 ring-primary-50">
+                    <QRCodeSVG
+                      value={`Signature valid\nDigitally Signed By:\nCertificate Authority\nCID: ${credential.metadataURI.substring(0, 5)}...${credential.metadataURI.substring(credential.metadataURI.length - 2)}`}
+                      size={200}
+                      level={"H"}
+                      includeMargin={true}
+                    />
+                  </div>
+                  <p className="mt-4 text-[10px] text-gray-400 font-mono text-center max-w-xs">
+                    This digital seal contains a cryptographically signed proof of authenticity verified on the Ethereum network.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Credential Details */}

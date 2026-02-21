@@ -14,9 +14,6 @@ contract AcademicCredential is ERC721, ERC721URIStorage, AccessControl {
     // Role definitions
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
-    // Token ID counter
-    uint256 private _tokenIdCounter;
-
     // Struct to store credential details
     struct Credential {
         uint256 tokenId;
@@ -29,7 +26,6 @@ contract AcademicCredential is ERC721, ERC721URIStorage, AccessControl {
     // Mappings
     mapping(uint256 => Credential) private _credentials;
     mapping(address => uint256[]) private _studentCredentials;
-    mapping(bytes32 => bool) private _metadataHashExists;
 
     // Events
     event CredentialIssued(
@@ -70,15 +66,10 @@ contract AcademicCredential is ERC721, ERC721URIStorage, AccessControl {
         require(student != address(0), "Cannot issue to zero address");
         require(bytes(metadataURI).length > 0, "Metadata URI cannot be empty");
 
-        // Prevent duplicate credentials based on metadata hash
-        bytes32 metadataHash = keccak256(abi.encodePacked(student, metadataURI));
-        require(!_metadataHashExists[metadataHash], "Credential already exists for this metadata");
+        // Generate unique 78-digit long Token ID using Keccak256 hash
+        uint256 tokenId = uint256(keccak256(abi.encodePacked(student, metadataURI)));
 
-        // Get current token ID and increment
-        uint256 tokenId = _tokenIdCounter;
-        _tokenIdCounter++;
-
-        // Mint the token
+        // Mint the token (ERC721 _safeMint will naturally fail if this ID somehow exists)
         _safeMint(student, tokenId);
         _setTokenURI(tokenId, metadataURI);
 
@@ -94,20 +85,54 @@ contract AcademicCredential is ERC721, ERC721URIStorage, AccessControl {
         // Track student credentials
         _studentCredentials[student].push(tokenId);
 
-        // Mark metadata hash as used
-        _metadataHashExists[metadataHash] = true;
-
         emit CredentialIssued(tokenId, student, metadataURI, block.timestamp);
 
         return tokenId;
     }
 
     /**
-     * @dev Revoke a credential
+     * @dev Issue multiple credentials in a single transaction
+     * @param students Array of student addresses receiving the credentials
+     * @param metadataURIs Array of IPFS URIs containing the credential metadata
+     * @return Array of all minted token IDs
+     */
+    function issueBatchCredentials(address[] memory students, string[] memory metadataURIs)
+        public
+        onlyRole(ISSUER_ROLE)
+        returns (uint256[] memory)
+    {
+        require(students.length == metadataURIs.length, "Arrays must have the same length");
+        require(students.length > 0, "Cannot issue empty batch");
+
+        uint256[] memory tokenIds = new uint256[](students.length);
+
+        for (uint256 i = 0; i < students.length; i++) {
+            // Reusing the single issue logic to ensure all validation runs per credential
+            tokenIds[i] = issueCredential(students[i], metadataURIs[i]);
+        }
+
+        return tokenIds;
+    }
+
+    /**
+     * @dev Revoke a credential (Issuer initiated)
      * @param tokenId ID of the credential to revoke
      */
     function revokeCredential(uint256 tokenId) public onlyRole(ISSUER_ROLE) {
         require(_ownerOf(tokenId) != address(0), "Credential does not exist");
+        require(!_credentials[tokenId].revoked, "Credential already revoked");
+
+        _credentials[tokenId].revoked = true;
+
+        emit CredentialRevoked(tokenId, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @dev Burn a credential (Student initiated revocation)
+     * @param tokenId ID of the credential to burn
+     */
+    function burnCredential(uint256 tokenId) public {
+        require(_ownerOf(tokenId) == msg.sender, "Only the credential owner can burn it");
         require(!_credentials[tokenId].revoked, "Credential already revoked");
 
         _credentials[tokenId].revoked = true;
@@ -168,13 +193,6 @@ contract AcademicCredential is ERC721, ERC721URIStorage, AccessControl {
         return !_credentials[tokenId].revoked;
     }
 
-    /**
-     * @dev Get the total number of credentials issued
-     * @return uint256 Total count of credentials
-     */
-    function getTotalCredentials() public view returns (uint256) {
-        return _tokenIdCounter;
-    }
 
     /**
      * @dev Override to prevent transfers (Soulbound logic)

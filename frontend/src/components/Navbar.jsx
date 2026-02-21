@@ -42,6 +42,16 @@ const Navbar = () => {
             <a href="/verify" className="text-gray-700 hover:text-primary-600 font-medium transition">
               Verify
             </a>
+            <a href="/employer" className="text-gray-700 hover:text-primary-600 font-medium transition">
+              Employer Verification
+            </a>
+            <a href="/analytics" className="text-gray-700 hover:text-primary-600 font-medium transition flex items-center">
+              <span className="relative flex h-2 w-2 mr-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+              </span>
+              Live Analytics
+            </a>
           </div>
 
           {/* Wallet Connection */}
@@ -106,6 +116,9 @@ const Navbar = () => {
           )}
           <a href="/verify" className="text-gray-700 hover:text-primary-600 text-sm">
             Verify
+          </a>
+          <a href="/employer" className="text-gray-700 hover:text-primary-600 text-sm">
+            Employer Verification
           </a>
         </div>
       </div>

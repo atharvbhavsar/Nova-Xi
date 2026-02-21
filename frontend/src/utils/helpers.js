@@ -5,9 +5,23 @@ import { IPFS_GATEWAY } from '../config/contract';
  */
 export const ipfsToHttp = (uri) => {
   if (!uri) return '';
+
+  // Clean up the gateway URL (ensure it doesn't end with double slashes)
+  const gateway = IPFS_GATEWAY.endsWith('/') ? IPFS_GATEWAY.slice(0, -1) : IPFS_GATEWAY;
+
   if (uri.startsWith('ipfs://')) {
-    return uri.replace('ipfs://', IPFS_GATEWAY);
+    const hash = uri.replace('ipfs://', '');
+    return `${gateway}/${hash}`;
   }
+
+  // If it's already an HTTP URL, return as is
+  if (uri.startsWith('http')) return uri;
+
+  // If it's just a raw CID (ipfs hashes usually start with Qm or ba)
+  if (uri.length >= 46 && (uri.startsWith('Qm') || uri.startsWith('ba'))) {
+    return `${gateway}/${uri}`;
+  }
+
   return uri;
 };
 
@@ -21,13 +35,13 @@ export const fetchMetadata = async (uri) => {
       const hash = uri.replace('ipfs://', '');
       const storageKey = `ipfs_metadata_${hash}`;
       const localData = localStorage.getItem(storageKey);
-      
+
       if (localData) {
         console.log('Metadata loaded from localStorage:', storageKey);
         return JSON.parse(localData);
       }
     }
-    
+
     // Try to fetch from IPFS gateway
     const url = ipfsToHttp(uri);
     const response = await fetch(url);

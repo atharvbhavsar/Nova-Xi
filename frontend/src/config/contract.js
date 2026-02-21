@@ -17,7 +17,9 @@ export const NETWORKS = {
 // Contract ABI - Essential functions only
 export const CONTRACT_ABI = [
   "function issueCredential(address student, string memory metadataURI) public returns (uint256)",
+  "function issueBatchCredentials(address[] memory students, string[] memory metadataURIs) public returns (uint256[])",
   "function revokeCredential(uint256 tokenId) public",
+  "function burnCredential(uint256 tokenId) public",
   "function verifyCredential(uint256 tokenId) public view returns (tuple(uint256 tokenId, address student, string metadataURI, uint256 issueTimestamp, bool revoked))",
   "function getStudentCredentials(address student) public view returns (uint256[])",
   "function getCredentialDetails(uint256 tokenId) public view returns (tuple(uint256 tokenId, address student, string metadataURI, uint256 issueTimestamp, bool revoked))",
